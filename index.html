@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UNESCO Heritage Atlas — Piyathida Suwannakat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,300&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --radius: 0.5rem;
+    --background: oklch(0.16 0.012 240);
+    --foreground: oklch(0.96 0.005 240);
+    --card: oklch(0.20 0.014 240);
+    --primary: oklch(0.86 0.18 165);
+    --primary-foreground: oklch(0.16 0.012 240);
+    --secondary: oklch(0.26 0.018 240);
+    --muted-foreground: oklch(0.68 0.018 240);
+    --border: oklch(0.28 0.018 240);
+    --grid: oklch(0.24 0.018 240 / 0.6);
+    --mint: oklch(0.86 0.18 165);
+    --amber: oklch(0.82 0.16 75);
+    --violet: oklch(0.72 0.18 295);
+    --paper: oklch(0.20 0.014 240);
+    --paper-line: oklch(0.30 0.018 240);
+    --paper-accent: oklch(0.86 0.18 165);
+    --paper-muted: oklch(0.68 0.018 240);
+    --shadow-card: 0 8px 30px -12px oklch(0 0 0 / 0.5);
+    --shadow-glow: 0 0 40px -10px oklch(0.86 0.18 165 / 0.5);
+    --radius-xl: calc(var(--radius) + 4px);
+  }
+
+  html, body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  ::selection { background: var(--mint); color: var(--background); }
+  a { color: inherit; text-decoration: none; }
+
+  .page-wrapper { position: relative; overflow: hidden; min-height: 100vh; }
+
+  .bg-grid {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, black 30%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, black 30%, transparent 80%);
+    z-index: 0;
+  }
+
+  .bg-aurora {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(ellipse 80% 60% at 20% 0%, oklch(0.86 0.18 165 / 0.18), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 90% 10%, oklch(0.72 0.18 295 / 0.14), transparent 60%);
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+  @media (min-width: 1024px) { .container { padding: 3rem 2.5rem 4rem; } }
+
+  /* PANEL */
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* PAPER */
+  .paper {
+    background: var(--paper);
+    border: 1px solid var(--paper-line);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 1px 0 oklch(0 0 0 / 0.04), 0 8px 30px -16px oklch(0 0 0 / 0.25);
+    transition: border-color 240ms ease, box-shadow 240ms ease, transform 240ms ease;
+  }
+  .paper:hover {
+    border-color: color-mix(in oklab, var(--mint) 55%, var(--paper-line));
+    box-shadow: 0 1px 0 oklch(0 0 0 / 0.04), 0 16px 50px -20px oklch(0 0 0 / 0.5), 0 0 0 1px color-mix(in oklab, var(--mint) 25%, transparent);
+    transform: translateY(-2px);
+  }
+
+  /* TYPOGRAPHY */
+  .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  .font-serif { font-family: 'Fraunces', ui-serif, Georgia, serif; }
+  .text-gradient {
+    background: linear-gradient(135deg, var(--mint), var(--violet));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .text-primary { color: var(--primary); }
+  .text-muted { color: var(--muted-foreground); }
+
+  /* PULSE DOT */
+  .pulse-dot::before {
+    content: "";
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 999px;
+    background: var(--mint);
+    margin-right: 8px;
+    box-shadow: 0 0 12px var(--mint);
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  /* TAGS */
+  .tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    background: var(--secondary);
+    border: 1px solid var(--border);
+    color: oklch(0.96 0.005 240 / 0.8);
+  }
+
+  .paper-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--paper-accent);
+  }
+  .paper-label::before {
+    content: "";
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--paper-accent);
+    flex-shrink: 0;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2.5rem;
+  }
+
+  .logo { display: flex; align-items: center; gap: 0.75rem; }
+  .logo-badge {
+    width: 36px; height: 36px;
+    border-radius: 0.5rem;
+    background: linear-gradient(135deg, var(--primary), var(--violet));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: var(--primary-foreground);
+    font-size: 13px;
+  }
+  .logo-text { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--muted-foreground); }
+
+  .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted-foreground);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    transition: background 200ms, color 200ms;
+  }
+  .btn-outline:hover { background: var(--secondary); color: var(--foreground); }
+
+  /* HERO */
+  .hero { padding: 2rem 2.5rem; margin-bottom: 1.5rem; position: relative; overflow: hidden; }
+  .hero-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--primary);
+    margin-bottom: 1rem;
+  }
+  .hero-title {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 600;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+  .hero-sub {
+    margin-top: 1rem;
+    font-size: 1rem;
+    color: var(--muted-foreground);
+    max-width: 56rem;
+    line-height: 1.7;
+  }
+  .hero-meta {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* STATS GRID */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+
+  .stat-card { padding: 1.25rem 1.5rem; transition: border-color 200ms; }
+  .stat-card:hover { border-color: oklch(0.86 0.18 165 / 0.4); }
+  .stat-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--muted-foreground); margin-bottom: 0.75rem; }
+  .stat-value { font-size: clamp(1.75rem, 3vw, 2.25rem); font-weight: 600; letter-spacing: -0.02em; }
+  .stat-sub { margin-top: 0.25rem; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted-foreground); }
+
+  /* FILTERS */
+  .filters-bar {
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+  }
+  .filter-group { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .filter-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--muted-foreground); }
+  .filter-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted-foreground);
+    cursor: pointer;
+    transition: all 200ms;
+  }
+  .filter-btn:hover { border-color: var(--mint); color: var(--mint); }
+  .filter-btn.active { background: oklch(0.86 0.18 165 / 0.15); border-color: var(--mint); color: var(--mint); }
+
+  /* CHARTS GRID */
+  .charts-grid {
+    display: grid;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  @media (min-width: 1024px) { .charts-grid { grid-template-columns: 3fr 2fr; } }
+
+  .chart-panel { padding: 1.5rem 1.75rem; }
+  .chart-header { margin-bottom: 1.25rem; }
+  .chart-title { font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; }
+  .chart-hint { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted-foreground); margin-top: 0.25rem; }
+  .chart-container { width: 100%; }
+
+  /* MAP */
+  .map-panel { padding: 1.5rem 1.75rem; margin-bottom: 1.5rem; }
+  .map-container { width: 100%; height: 480px; border-radius: 0.5rem; overflow: hidden; }
+
+  /* BOTTOM GRID */
+  .bottom-grid {
+    display: grid;
+    gap: 1.25rem;
+  }
+  @media (min-width: 1024px) { .bottom-grid { grid-template-columns: 1fr 1fr; } }
+
+  /* SITE TABLE */
+  .table-panel { padding: 1.5rem 1.75rem; }
+  .search-input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--border);
+    background: var(--secondary);
+    color: var(--foreground);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    margin: 1rem 0;
+    outline: none;
+    transition: border-color 200ms;
+  }
+  .search-input:focus { border-color: var(--mint); }
+  .search-input::placeholder { color: var(--muted-foreground); }
+
+  .sites-table { width: 100%; border-collapse: collapse; }
+  .sites-table th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted-foreground);
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .sites-table td {
+    font-size: 13px;
+    padding: 0.625rem 0.75rem;
+    border-bottom: 1px solid oklch(0.28 0.018 240 / 0.4);
+    vertical-align: top;
+  }
+  .sites-table tr:last-child td { border-bottom: none; }
+  .sites-table tr:hover td { background: oklch(0.26 0.018 240 / 0.4); }
+  .category-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid;
+  }
+  .cat-cultural { color: var(--mint); border-color: oklch(0.86 0.18 165 / 0.4); background: oklch(0.86 0.18 165 / 0.08); }
+  .cat-natural { color: var(--amber); border-color: oklch(0.82 0.16 75 / 0.4); background: oklch(0.82 0.16 75 / 0.08); }
+  .cat-mixed { color: var(--violet); border-color: oklch(0.72 0.18 295 / 0.4); background: oklch(0.72 0.18 295 / 0.08); }
+
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted-foreground);
+  }
+  .page-btn {
+    padding: 0.25rem 0.625rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted-foreground);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 200ms;
+  }
+  .page-btn:hover:not(:disabled) { border-color: var(--mint); color: var(--mint); }
+  .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* FOOTER */
+  footer {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted-foreground);
+  }
+
+  /* LOADING */
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--muted-foreground);
+  }
+
+  svg { display: inline-block; vertical-align: middle; }
+</style>
+</head>
+<body>
+<div class="page-wrapper">
+  <div class="bg-grid"></div>
+  <div class="bg-aurora"></div>
+
+  <div class="container">
+
+    <!-- HEADER -->
+    <header>
+      <div class="logo">
+        <div class="logo-badge">PS</div>
+        <div class="logo-text"><span class="pulse-dot"></span>unesco-heritage</div>
+      </div>
+      <a href="../../index.html" class="btn-outline">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        back to portfolio
+      </a>
+    </header>
+
+    <!-- HERO -->
+    <div class="panel hero" style="margin-bottom:1.5rem;">
+      <div class="hero-eyebrow">~/ data analysis · exploratory</div>
+      <h1 class="hero-title">UNESCO <span class="text-gradient">Heritage Atlas</span></h1>
+      <p class="hero-sub">
+        Exploratory analysis of 1,248 UNESCO World Heritage Sites across 171 countries — from 1978 to 2025.
+        Discover cultural and natural treasures by continent, country, and category.
+      </p>
+      <div class="hero-meta">
+        <span class="tag">Python</span>
+        <span class="tag">Pandas</span>
+        <span class="tag">Plotly.js</span>
+        <span class="tag">1,248 sites</span>
+        <span class="tag">171 countries</span>
+        <span class="tag">1978 – 2025</span>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="panel stat-card">
+        <div class="stat-label">Total Sites</div>
+        <div class="stat-value" style="color:var(--mint);" id="stat-sites">—</div>
+        <div class="stat-sub">world heritage sites</div>
+      </div>
+      <div class="panel stat-card">
+        <div class="stat-label">Countries</div>
+        <div class="stat-value" style="color:var(--violet);" id="stat-countries">—</div>
+        <div class="stat-sub">member states</div>
+      </div>
+      <div class="panel stat-card">
+        <div class="stat-label">Cultural Sites</div>
+        <div class="stat-value" style="color:var(--mint);" id="stat-cultural">—</div>
+        <div class="stat-sub">of total inscriptions</div>
+      </div>
+      <div class="panel stat-card">
+        <div class="stat-label">Peak Year</div>
+        <div class="stat-value" style="color:var(--amber);" id="stat-peak">—</div>
+        <div class="stat-sub">most inscriptions</div>
+      </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="panel filters-bar">
+      <div class="filter-group">
+        <span class="filter-label">Continent</span>
+        <button class="filter-btn active" data-filter="continent" data-value="All">All</button>
+        <button class="filter-btn" data-filter="continent" data-value="Europe">Europe</button>
+        <button class="filter-btn" data-filter="continent" data-value="Asia">Asia</button>
+        <button class="filter-btn" data-filter="continent" data-value="Africa">Africa</button>
+        <button class="filter-btn" data-filter="continent" data-value="North America">N. America</button>
+        <button class="filter-btn" data-filter="continent" data-value="South America">S. America</button>
+        <button class="filter-btn" data-filter="continent" data-value="Oceania">Oceania</button>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Category</span>
+        <button class="filter-btn active" data-filter="category" data-value="All">All</button>
+        <button class="filter-btn" data-filter="category" data-value="Cultural">Cultural</button>
+        <button class="filter-btn" data-filter="category" data-value="Natural">Natural</button>
+        <button class="filter-btn" data-filter="category" data-value="Mixed">Mixed</button>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW 1 -->
+    <div class="charts-grid">
+      <!-- Timeline -->
+      <div class="panel chart-panel">
+        <div class="chart-header">
+          <div class="chart-title">Inscriptions Over Time</div>
+          <div class="chart-hint">sites inscribed per year · 1978–2025</div>
+        </div>
+        <div class="chart-container" id="chart-timeline" style="height:260px;"></div>
+      </div>
+      <!-- Category donut -->
+      <div class="panel chart-panel">
+        <div class="chart-header">
+          <div class="chart-title">By Category</div>
+          <div class="chart-hint">cultural · natural · mixed</div>
+        </div>
+        <div class="chart-container" id="chart-category" style="height:260px;"></div>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW 2 -->
+    <div class="charts-grid" style="margin-bottom:1.5rem;">
+      <!-- Top countries -->
+      <div class="panel chart-panel">
+        <div class="chart-header">
+          <div class="chart-title">Top 15 Countries</div>
+          <div class="chart-hint">by number of heritage sites</div>
+        </div>
+        <div class="chart-container" id="chart-countries" style="height:340px;"></div>
+      </div>
+      <!-- Continent breakdown -->
+      <div class="panel chart-panel">
+        <div class="chart-header">
+          <div class="chart-title">Category by Continent</div>
+          <div class="chart-hint">cultural · natural · mixed breakdown</div>
+        </div>
+        <div class="chart-container" id="chart-continent" style="height:340px;"></div>
+      </div>
+    </div>
+
+    <!-- MAP -->
+    <div class="panel map-panel">
+      <div class="chart-header">
+        <div class="chart-title">World Heritage Map</div>
+        <div class="chart-hint">hover over a site to see details · zoom and pan to explore</div>
+      </div>
+      <div class="map-container" id="chart-map"><div class="loading">loading map…</div></div>
+    </div>
+
+    <!-- BOTTOM: TABLE -->
+    <div class="panel table-panel">
+      <div class="chart-header">
+        <div class="chart-title">Browse Sites</div>
+        <div class="chart-hint">search by name or country</div>
+      </div>
+      <input type="text" class="search-input" id="search-input" placeholder="Search sites or countries…" />
+      <div style="overflow-x:auto;">
+        <table class="sites-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Country</th>
+              <th>Continent</th>
+              <th>Category</th>
+              <th>Year</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <tr><td colspan="5" style="text-align:center;color:var(--muted-foreground);font-family:'JetBrains Mono',monospace;font-size:13px;padding:2rem;">loading data…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <span id="page-info">— of — sites</span>
+        <div style="display:flex;gap:0.5rem;">
+          <button class="page-btn" id="btn-prev" disabled>← prev</button>
+          <button class="page-btn" id="btn-next">next →</button>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <span>© 2025 Piyathida Suwannakat</span>
+      <span>dataset: <a href="https://whc.unesco.org/en/list/" target="_blank" style="color:var(--primary);">whc.unesco.org</a> · 1,248 sites · 1978–2025</span>
+    </footer>
+
+  </div>
+</div>
+
+<script>
+// ─── Plotly config ───────────────────────────────────────────────────────────
+const PLOTLY_CONFIG = { displayModeBar: false, responsive: true };
+
+const THEME = {
+  bg: 'rgba(0,0,0,0)',
+  paper: 'rgba(0,0,0,0)',
+  font: { family: "'JetBrains Mono', monospace", color: 'oklch(0.68 0.018 240)', size: 11 },
+  grid: 'oklch(0.28 0.018 240)',
+  mint: '#4ade80',
+  amber: '#fbbf24',
+  violet: '#a78bfa',
+  colors: ['#4ade80', '#a78bfa', '#fbbf24', '#60a5fa', '#f87171', '#34d399']
+};
+
+const CAT_COLORS = { Cultural: THEME.mint, Natural: THEME.amber, Mixed: THEME.violet };
+const CONT_COLORS = {
+  Europe: '#4ade80', Asia: '#a78bfa', Africa: '#fbbf24',
+  'North America': '#60a5fa', 'South America': '#f87171', Oceania: '#34d399'
+};
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let ALL_DATA = [];
+let filtered = [];
+let currentContinent = 'All';
+let currentCategory = 'All';
+let currentPage = 0;
+const PAGE_SIZE = 15;
+let searchQuery = '';
+
+// ─── Load data ───────────────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const res = await fetch('./heritage.json');
+    ALL_DATA = await res.json();
+    // Deduplicate by name for stats (sites appear multiple times due to explode)
+    init();
+  } catch (e) {
+    console.error('Could not load heritage.json:', e);
+    // Use sample data for demo
+    ALL_DATA = generateSampleData();
+    init();
+  }
+}
+
+function generateSampleData() {
+  // Minimal sample so dashboard renders even without JSON
+  const continents = ['Europe','Asia','Africa','North America','South America','Oceania'];
+  const categories = ['Cultural','Natural','Mixed'];
+  const countries = ['Italy','China','Germany','France','Spain','India','Mexico','United Kingdom','Russia','Iran'];
+  const data = [];
+  for (let i = 0; i < 200; i++) {
+    data.push({
+      Name: `Heritage Site ${i+1}`,
+      Countries: countries[i % countries.length],
+      Continent: continents[i % continents.length],
+      Category: categories[i % categories.length],
+      Date: 1978 + (i % 48),
+      Latitude: (Math.random() * 140) - 70,
+      Longitude: (Math.random() * 360) - 180,
+      Description: 'A remarkable world heritage site.'
+    });
+  }
+  return data;
+}
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+function init() {
+  applyFilters();
+  renderStats();
+  renderTimeline();
+  renderCategory();
+  renderCountries();
+  renderContinent();
+  renderMap();
+  renderTable();
+  setupFilters();
+  setupSearch();
+}
+
+// ─── Unique sites (deduplicated by Name for counting) ────────────────────────
+function uniqueSites(data) {
+  const seen = new Set();
+  return data.filter(d => {
+    if (seen.has(d.Name)) return false;
+    seen.add(d.Name);
+    return true;
+  });
+}
+
+// ─── Filter ──────────────────────────────────────────────────────────────────
+function applyFilters() {
+  filtered = ALL_DATA.filter(d => {
+    const contOk = currentContinent === 'All' || d.Continent === currentContinent;
+    const catOk = currentCategory === 'All' || d.Category === currentCategory;
+    return contOk && catOk;
+  });
+}
+
+// ─── Stats ───────────────────────────────────────────────────────────────────
+function renderStats() {
+  const sites = uniqueSites(filtered);
+  document.getElementById('stat-sites').textContent = sites.length.toLocaleString();
+
+  const countries = new Set(filtered.map(d => d.Countries));
+  document.getElementById('stat-countries').textContent = countries.size.toLocaleString();
+
+  const cultural = sites.filter(d => d.Category === 'Cultural').length;
+  document.getElementById('stat-cultural').textContent = cultural.toLocaleString();
+
+  // Peak year
+  const byYear = {};
+  sites.forEach(d => { byYear[d.Date] = (byYear[d.Date] || 0) + 1; });
+  const peak = Object.entries(byYear).sort((a,b) => b[1]-a[1])[0];
+  document.getElementById('stat-peak').textContent = peak ? peak[0] : '—';
+}
+
+// ─── Timeline chart ──────────────────────────────────────────────────────────
+function renderTimeline() {
+  const sites = uniqueSites(filtered);
+  const byYear = {};
+  sites.forEach(d => { byYear[d.Date] = (byYear[d.Date] || 0) + 1; });
+  const years = Object.keys(byYear).sort();
+  const counts = years.map(y => byYear[y]);
+
+  const trace = {
+    x: years, y: counts,
+    type: 'scatter', mode: 'lines+markers',
+    fill: 'tozeroy',
+    fillcolor: 'oklch(0.86 0.18 165 / 0.12)',
+    line: { color: THEME.mint, width: 2 },
+    marker: { color: THEME.mint, size: 4 },
+    hovertemplate: '<b>%{x}</b><br>%{y} sites<extra></extra>'
+  };
+
+  const brightFont = { family: "'JetBrains Mono', monospace", color: '#e2e8f0', size: 12 };
+
+  const layout = {
+    paper_bgcolor: THEME.paper, plot_bgcolor: THEME.bg,
+    font: THEME.font, margin: { t: 10, b: 40, l: 40, r: 10 },
+    xaxis: { gridcolor: THEME.grid, tickfont: brightFont, showgrid: false },
+    yaxis: { gridcolor: THEME.grid, tickfont: brightFont },
+    showlegend: false,
+    hoverlabel: { bgcolor: '#1e2530', font: { family: "'JetBrains Mono',monospace", size: 12 } }
+  };
+
+  Plotly.newPlot('chart-timeline', [trace], layout, PLOTLY_CONFIG);
+}
+
+// ─── Category donut ──────────────────────────────────────────────────────────
+function renderCategory() {
+  const sites = uniqueSites(filtered);
+  const counts = {};
+  sites.forEach(d => { counts[d.Category] = (counts[d.Category] || 0) + 1; });
+
+  const labels = Object.keys(counts);
+  const values = labels.map(l => counts[l]);
+  const colors = labels.map(l => CAT_COLORS[l] || THEME.mint);
+
+  const trace = {
+    labels, values,
+    type: 'pie', hole: 0.55,
+    marker: { colors, line: { color: 'oklch(0.20 0.014 240)', width: 2 } },
+    textfont: { family: "'JetBrains Mono',monospace", size: 12, color: '#e2e8f0' },
+    hovertemplate: '<b>%{label}</b><br>%{value} sites (%{percent})<extra></extra>'
+  };
+
+  const brightFont = { family: "'JetBrains Mono', monospace", color: '#e2e8f0', size: 12 };
+
+  const layout = {
+    paper_bgcolor: THEME.paper, plot_bgcolor: THEME.bg,
+    font: THEME.font, margin: { t: 10, b: 10, l: 10, r: 10 },
+    showlegend: true,
+    legend: { font: brightFont, bgcolor: 'transparent', x: 0.5, xanchor: 'center', y: -0.1, orientation: 'h' },
+    hoverlabel: { bgcolor: '#1e2530', font: { family: "'JetBrains Mono',monospace", size: 12 } }
+  };
+
+  Plotly.newPlot('chart-category', [trace], layout, PLOTLY_CONFIG);
+}
+
+// ─── Top countries ───────────────────────────────────────────────────────────
+function renderCountries() {
+  const sites = uniqueSites(filtered);
+  const counts = {};
+  sites.forEach(d => { counts[d.Countries] = (counts[d.Countries] || 0) + 1; });
+
+  const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0,15);
+  const countries = sorted.map(d => d[0]).reverse();
+  const values = sorted.map(d => d[1]).reverse();
+  const dimColor = 'rgba(74, 222, 128, 0.25)';
+  const barColors = values.map(() => dimColor);
+
+  const trace = {
+    x: values, y: countries,
+    type: 'bar', orientation: 'h',
+    marker: { color: barColors, line: { width: 0 } },
+    hovertemplate: '<b>%{y}</b><br>%{x} sites<extra></extra>'
+  };
+
+  const brightFont = { family: "'JetBrains Mono', monospace", color: '#e2e8f0', size: 12 };
+
+  const layout = {
+    paper_bgcolor: THEME.paper, plot_bgcolor: THEME.bg,
+    font: THEME.font, margin: { t: 10, b: 30, l: 130, r: 30 },
+    xaxis: { gridcolor: THEME.grid, tickfont: brightFont },
+    yaxis: { tickfont: brightFont, gridcolor: THEME.grid },
+    showlegend: false,
+    hovermode: 'closest',
+    hoverlabel: { bgcolor: '#1e2530', font: { family: "'JetBrains Mono',monospace", size: 12 } }
+  };
+
+  const chartEl = document.getElementById('chart-countries');
+  Plotly.newPlot('chart-countries', [trace], layout, PLOTLY_CONFIG);
+
+  chartEl.on('plotly_hover', (data) => {
+    const idx = data.points[0].pointIndex;
+    const newColors = barColors.map((c, i) => i === idx ? '#4ade80' : c);
+    Plotly.restyle('chart-countries', { 'marker.color': [newColors] });
+  });
+  chartEl.on('plotly_unhover', () => {
+    Plotly.restyle('chart-countries', { 'marker.color': [barColors] });
+  });
+}
+
+// ─── Continent stacked bar ───────────────────────────────────────────────────
+function renderContinent() {
+  const sites = uniqueSites(filtered);
+  const continents = [...new Set(sites.map(d => d.Continent))].filter(Boolean).sort();
+  const categories = ['Cultural', 'Natural', 'Mixed'];
+
+  const traces = categories.map(cat => ({
+    name: cat,
+    x: continents,
+    y: continents.map(cont => sites.filter(d => d.Continent === cont && d.Category === cat).length),
+    type: 'bar',
+    marker: { color: CAT_COLORS[cat] },
+    hovertemplate: `<b>${cat}</b><br>%{x}: %{y} sites<extra></extra>`
+  }));
+
+  const brightFont = { family: "'JetBrains Mono', monospace", color: '#e2e8f0', size: 12 };
+
+  const layout = {
+    paper_bgcolor: THEME.paper, plot_bgcolor: THEME.bg,
+    font: THEME.font, barmode: 'group',
+    margin: { t: 10, b: 90, l: 40, r: 10 },
+    xaxis: { gridcolor: THEME.grid, tickfont: { ...brightFont, size: 11 }, tickangle: -90 },
+    yaxis: { gridcolor: THEME.grid, tickfont: brightFont },
+    legend: { font: { ...brightFont, size: 11 }, bgcolor: 'transparent', orientation: 'h', x: 0.5, xanchor: 'center', y: -0.35 },
+    hoverlabel: { bgcolor: '#1e2530', font: { family: "'JetBrains Mono',monospace", size: 12 } }
+  };
+
+  Plotly.newPlot('chart-continent', traces, layout, PLOTLY_CONFIG);
+}
+
+// ─── Map ─────────────────────────────────────────────────────────────────────
+function renderMap() {
+  const sites = uniqueSites(filtered).filter(d => d.Latitude && d.Longitude);
+
+  const byCat = { Cultural: [], Natural: [], Mixed: [] };
+  sites.forEach(d => {
+    const cat = d.Category || 'Cultural';
+    if (byCat[cat]) byCat[cat].push(d);
+  });
+
+  const traces = Object.entries(byCat).map(([cat, data]) => ({
+    type: 'scattergeo',
+    lat: data.map(d => d.Latitude),
+    lon: data.map(d => d.Longitude),
+    text: data.map(d => `<b>${d.Name}</b><br>${d.Countries} · ${d.Date}`),
+    name: cat,
+    mode: 'markers',
+    marker: {
+      size: 6,
+      color: CAT_COLORS[cat],
+      opacity: 0.75,
+      line: { width: 0 }
+    },
+    hovertemplate: '%{text}<extra></extra>'
+  }));
+
+  const layout = {
+    paper_bgcolor: THEME.paper,
+    geo: {
+      bgcolor: 'oklch(0.18 0.013 240)',
+      landcolor: 'oklch(0.24 0.016 240)',
+      oceancolor: 'oklch(0.18 0.013 240)',
+      showocean: true,
+      showland: true,
+      showcoastlines: true,
+      coastlinecolor: 'oklch(0.32 0.018 240)',
+      showcountries: true,
+      countrycolor: 'oklch(0.30 0.018 240)',
+      showframe: false,
+      projection: { type: 'natural earth' }
+    },
+    legend: {
+      font: THEME.font, bgcolor: 'oklch(0.20 0.014 240 / 0.9)',
+      bordercolor: 'oklch(0.28 0.018 240)', borderwidth: 1,
+      x: 0.01, y: 0.99
+    },
+    margin: { t: 0, b: 0, l: 0, r: 0 },
+    hoverlabel: { bgcolor: '#1e2530', font: { family: "'JetBrains Mono',monospace", size: 12 } }
+  };
+
+  Plotly.newPlot('chart-map', traces, layout, PLOTLY_CONFIG);
+}
+
+// ─── Table ───────────────────────────────────────────────────────────────────
+function getTableData() {
+  const sites = uniqueSites(filtered);
+  const q = searchQuery.toLowerCase();
+  if (!q) return sites;
+  return sites.filter(d =>
+    (d.Name || '').toLowerCase().includes(q) ||
+    (d.Countries || '').toLowerCase().includes(q) ||
+    (d.Continent || '').toLowerCase().includes(q)
+  );
+}
+
+function renderTable() {
+  const data = getTableData();
+  const total = data.length;
+  const start = currentPage * PAGE_SIZE;
+  const page = data.slice(start, start + PAGE_SIZE);
+
+  const tbody = document.getElementById('table-body');
+  if (page.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted-foreground);font-family:'JetBrains Mono',monospace;font-size:13px;padding:2rem;">No sites found</td></tr>`;
+  } else {
+    tbody.innerHTML = page.map(d => `
+      <tr>
+        <td style="font-weight:500;max-width:260px;">${d.Name || '—'}</td>
+        <td style="color:var(--muted-foreground);">${d.Countries || '—'}</td>
+        <td style="color:var(--muted-foreground);">${d.Continent || '—'}</td>
+        <td><span class="category-badge cat-${(d.Category||'').toLowerCase()}">${d.Category || '—'}</span></td>
+        <td style="font-family:'JetBrains Mono',monospace;color:var(--muted-foreground);">${d.Date || '—'}</td>
+      </tr>
+    `).join('');
+  }
+
+  document.getElementById('page-info').textContent = `${Math.min(start+1,total)}–${Math.min(start+PAGE_SIZE,total)} of ${total} sites`;
+  document.getElementById('btn-prev').disabled = currentPage === 0;
+  document.getElementById('btn-next').disabled = start + PAGE_SIZE >= total;
+}
+
+// ─── Filters ─────────────────────────────────────────────────────────────────
+function setupFilters() {
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const filter = btn.dataset.filter;
+      const value = btn.dataset.value;
+
+      document.querySelectorAll(`[data-filter="${filter}"]`).forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      if (filter === 'continent') currentContinent = value;
+      if (filter === 'category') currentCategory = value;
+
+      currentPage = 0;
+      applyFilters();
+      renderStats();
+      renderTimeline();
+      renderCategory();
+      renderCountries();
+      renderContinent();
+      renderMap();
+      renderTable();
+    });
+  });
+
+  document.getElementById('btn-prev').addEventListener('click', () => {
+    if (currentPage > 0) { currentPage--; renderTable(); }
+  });
+
+  document.getElementById('btn-next').addEventListener('click', () => {
+    const data = getTableData();
+    if ((currentPage + 1) * PAGE_SIZE < data.length) { currentPage++; renderTable(); }
+  });
+}
+
+// ─── Search ──────────────────────────────────────────────────────────────────
+function setupSearch() {
+  document.getElementById('search-input').addEventListener('input', e => {
+    searchQuery = e.target.value;
+    currentPage = 0;
+    renderTable();
+  });
+}
+
+// ─── Boot ────────────────────────────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>
