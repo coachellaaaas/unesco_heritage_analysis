@@ -4,7 +4,7 @@ I built this as a personal data project to explore the full UNESCO World Heritag
 
 The goal was simple: clean the data properly, find what's interesting, and present it in a way that's actually enjoyable to explore.
 
-🌍 **[View Live Dashboard](https://coachellaaaas.github.io/personal-portfolio/projects/unesco-heritage/)**
+🌍 **[View Live Dashboard](https://coachellaaaas.github.io/unesco_heritage_analysis/)**
 
 ---
 
@@ -64,7 +64,7 @@ A few things surprised me when I actually looked at the data:
 ## Project structure
 
 ```
-unesco-heritage/
+unesco/
 ├── index.html          ← the dashboard
 ├── heritage.json       ← cleaned dataset
 ├── analysis.ipynb      ← full EDA notebook
@@ -80,4 +80,4 @@ From the [UNESCO World Heritage Centre](https://whc.unesco.org/en/list/) — 1,2
 
 ---
 
-**Piyathida Suwannakat** — [Portfolio](https://coachellaaaas.github.io/personal-portfolio/) · [GitHub](https://github.com/coachellaaaas) · [LinkedIn](https://www.linkedin.com/in/piyathida-suwannakat)
+**Piyathida Suwannakat** — [Portfolio](https://coachellaaaas.github.io/myportfolio/) · [GitHub](https://github.com/coachellaaaas) · [LinkedIn](https://www.linkedin.com/in/piyathida-suwannakat)
